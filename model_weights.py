@@ -25,16 +25,23 @@ class_colors = [
     (4, 250, 7)        # grass
 ]
 
+class_colors = [
+    (0, 0, 0), # background
+    (160, 150, 20), # road-flooded
+    (140, 140, 140) # road-non-flooded
+
+]
+
 background = np.array(class_colors[0])
-building_flooded = np.array(class_colors[1])
-building_nonflooded = np.array(class_colors[2])
-road_flooded = np.array(class_colors[3])
-road_nonflooded = np.array(class_colors[4])
-water = np.array(class_colors[5])
-tree = np.array(class_colors[6])
-vehicle = np.array(class_colors[7])
-pool = np.array(class_colors[8])
-grass = np.array(class_colors[9])
+# building_flooded = np.array(class_colors[1])
+# building_nonflooded = np.array(class_colors[2])
+road_flooded = np.array(class_colors[1])
+road_nonflooded = np.array(class_colors[2])
+# water = np.array(class_colors[5])
+# tree = np.array(class_colors[6])
+# vehicle = np.array(class_colors[7])
+# pool = np.array(class_colors[8])
+# grass = np.array(class_colors[9])
 
 num_classes = len(class_colors)
 
@@ -42,8 +49,14 @@ num_classes = len(class_colors)
 # train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/ColorMasks-TrainSet-patches'
 
 
-train_imgs_direc = '/home/anirud/Desktop/SemanticSeg/TrainImgsOne'
-train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/MaskPatchesOne'
+# -- below is one I've always been using
+# train_imgs_direc = '/home/anirud/Desktop/SemanticSeg/TrainImgsOne'
+# train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/MaskPatchesOne'
+
+train_imgs_direc = '/home/anirud/Desktop/SemanticSeg/TrainImgsOne (dep)'
+train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/MaskPatchesOne (dep)'
+
+#train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/terrain_model/terrain_only'
 
 def load_images(img_direc, gt_direc):
 
@@ -88,15 +101,15 @@ train_masks = new_train_masks
 def rgb_to_2D_label(label):
     label_seg = np.zeros(label.shape,dtype=np.uint8)
     label_seg[np.all(label==background, axis=-1)] = 0
-    label_seg[np.all(label==building_flooded, axis=-1)] = 1
-    label_seg[np.all(label==building_nonflooded, axis=-1)] = 2
-    label_seg[np.all(label==road_flooded, axis=-1)] = 3
-    label_seg[np.all(label==road_nonflooded, axis=-1)] = 4
-    label_seg[np.all(label==water, axis=-1)] = 5
-    label_seg[np.all(label==tree, axis=-1)] = 6
-    label_seg[np.all(label==vehicle, axis=-1)] = 7
-    label_seg[np.all(label==pool, axis=-1)] = 8
-    label_seg[np.all(label==grass, axis=-1)] = 9
+    # label_seg[np.all(label==building_flooded, axis=-1)] = 1
+    # label_seg[np.all(label==building_nonflooded, axis=-1)] = 2
+    label_seg[np.all(label==road_flooded, axis=-1)] = 1
+    label_seg[np.all(label==road_nonflooded, axis=-1)] = 2
+    # label_seg[np.all(label==water, axis=-1)] = 5
+    # label_seg[np.all(label==tree, axis=-1)] = 6
+    # label_seg[np.all(label==vehicle, axis=-1)] = 7
+    # label_seg[np.all(label==pool, axis=-1)] = 8
+    # label_seg[np.all(label==grass, axis=-1)] = 9
 
     label_seg = label_seg[:,:,0]
 
@@ -123,11 +136,22 @@ c = X_train.shape[3]
 
 model = UNet(num_classes=len(class_colors), input_size=(h,w,c))
 #model.load_weights('/home/anirud/Desktop/SemanticSeg/good_weights/revamped.weights.h5')
-model.load_weights('/home/anirud/Desktop/SemanticSeg/revamped_two.weights.h5')
+#model.load_weights('/home/anirud/Desktop/SemanticSeg/weights_gpu/two.weights.h5')
+#model.load_weights('/home/anirud/Desktop/SemanticSeg/revamped_two.weights.h5')
+model.load_weights('/home/anirud/Desktop/SemanticSeg/road_model/revamped_two.weights.h5')
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 model.evaluate(X_test, y_test, batch_size=16, verbose=1)
 print('Evaluting model...')
 y_test_argmax = np.argmax(y_test, axis=3)
+test_img = X_test[284]
+ground_truth = y_test_argmax[284]
+test_img_input = np.expand_dims(test_img, 0)
+prediction = model.predict(test_img_input)
+predicted_img = np.argmax(prediction, axis=3)[0,:,:]
+print(predicted_img.shape)
+# cv2.imwrite('aerial.png', test_img)
+# cv2.imwrite('segmentation_matrix.tif', predicted_img)
+# cv2.imwrite('actual_segmentation.tif', prediction[0])
 
 try:
     while True:
@@ -150,6 +174,7 @@ try:
         plt.imshow(predicted_img)
         plt.show()
 
+        cv2
         print('Done')
 except KeyboardInterrupt:
     pass
