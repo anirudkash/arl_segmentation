@@ -16,8 +16,8 @@ class_colors = [
     (0, 0, 0), # background
     (255, 0, 0), # building flooded
     (180, 120, 120),  # building non-flooded --
-    (160, 150, 20), # road-flooded
-    (140, 140, 140),   # road-non-flooded
+    # # (160, 150, 20), # road-flooded
+    # # (140, 140, 140),   # road-non-flooded
     (61, 230, 250),    # water --
     (0, 82, 255),      # tree
     (255, 0, 245),     # vehicle
@@ -25,23 +25,38 @@ class_colors = [
     (4, 250, 7)        # grass
 ]
 
+# class_colors = [
+#     (0, 0, 0), # background
+#     (160, 150, 20), # road-flooded
+#     (140, 140, 140) # road-non-flooded
+# ]
+
 background = np.array(class_colors[0])
 building_flooded = np.array(class_colors[1])
 building_nonflooded = np.array(class_colors[2])
-road_flooded = np.array(class_colors[3])
-road_nonflooded = np.array(class_colors[4])
-water = np.array(class_colors[5])
-tree = np.array(class_colors[6])
-vehicle = np.array(class_colors[7])
-pool = np.array(class_colors[8])
-grass = np.array(class_colors[9])
+# road_flooded = np.array(class_colors[3])
+# road_nonflooded = np.array(class_colors[4])
+water = np.array(class_colors[3])
+tree = np.array(class_colors[4])
+vehicle = np.array(class_colors[5])
+pool = np.array(class_colors[6])
+grass = np.array(class_colors[7])
 
 num_classes = len(class_colors)
 
 # train_imgs_direc = '/home/anirud/Desktop/SemanticSeg/train-org-img-patches'
 # train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/ColorMasks-TrainSet-patches'
-train_imgs_direc = '/home/anirud/Desktop/SemanticSeg/TrainImgsOne'
-train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/MaskPatchesOne'
+
+# # train_imgs_direc = '/home/anirud/Desktop/SemanticSeg/TrainImgsOne'
+# # train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/MaskPatchesOne'
+
+train_imgs_direc = '/home/anirud/Desktop/SemanticSeg/TrainImgsOneWithBuilds'
+train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/MaskPatchesOneWithBuilds'
+
+#train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/terrain_model/terrain_only'
+
+# train_imgs_direc = '/home/anirud/Desktop/SemanticSeg/train-org-img'
+# train_imgs_labs_direc = '/home/anirud/Desktop/SemanticSeg/terrain_model/terrain_only'
 
 def load_images(img_direc, gt_direc):
 
@@ -58,13 +73,13 @@ def load_images(img_direc, gt_direc):
         path = os.path.join(img_direc, fname) 
         # might have to read in the image as gray scale 
         img = cv2.imread(path)
-        img = cv2.resize(img, (128, 128))
+        img = cv2.resize(img, (128,128))
         train_imgs.append(img)
 
     for fname in train_imgs_labs_entries:
         path = os.path.join(gt_direc, fname)
         img = cv2.imread(path)
-        img = cv2.resize(img, (128, 128))
+        img = cv2.resize(img, (128,128))
        # img = cv2.imread(path, cv2.COLOR_BGR2RGB)
         train_imgs_labs.append(img)
 
@@ -74,7 +89,7 @@ def load_images(img_direc, gt_direc):
     return train_images, train_masks
 
 train_images, train_masks = load_images(train_imgs_direc, train_imgs_labs_direc)
-
+print('Loaded images')
 new_train_masks = np.empty_like(train_masks)
 
 for i in range(train_masks.shape[0]):
@@ -87,13 +102,13 @@ def rgb_to_2D_label(label):
     label_seg[np.all(label==background, axis=-1)] = 0
     label_seg[np.all(label==building_flooded, axis=-1)] = 1
     label_seg[np.all(label==building_nonflooded, axis=-1)] = 2
-    label_seg[np.all(label==road_flooded, axis=-1)] = 3
-    label_seg[np.all(label==road_nonflooded, axis=-1)] = 4
-    label_seg[np.all(label==water, axis=-1)] = 5
-    label_seg[np.all(label==tree, axis=-1)] = 6
-    label_seg[np.all(label==vehicle, axis=-1)] = 7
-    label_seg[np.all(label==pool, axis=-1)] = 8
-    label_seg[np.all(label==grass, axis=-1)] = 9
+    # label_seg[np.all(label==road_flooded, axis=-1)] = 3
+    # label_seg[np.all(label==road_nonflooded, axis=-1)] = 4
+    label_seg[np.all(label==water, axis=-1)] = 3
+    label_seg[np.all(label==tree, axis=-1)] = 4
+    label_seg[np.all(label==vehicle, axis=-1)] = 5
+    label_seg[np.all(label==pool, axis=-1)] = 6
+    label_seg[np.all(label==grass, axis=-1)] = 7
 
     label_seg = label_seg[:,:,0]
 
@@ -120,7 +135,7 @@ c = X_train.shape[3]
 
 model = UNet(num_classes=len(class_colors), input_size=(h,w,c))
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-weights = model.fit(X_train, y_train, batch_size=16, verbose=1, epochs=4, validation_data=(X_test, y_test), shuffle=False)
+weights = model.fit(X_train, y_train, batch_size=4, verbose=1, epochs=10, validation_data=(X_test, y_test), shuffle=False)
 print(f'Model trained on {4} epochs and a batch size of {16}')
 model.save_weights('revamped_two.weights.h5')
 y_test_argmax = np.argmax(y_test, axis=3)
@@ -144,3 +159,40 @@ plt.subplot(233)
 plt.title('Predicted Image')
 plt.imshow(predicted_img, cmap='jet')
 plt.show()
+
+
+try:
+    while True:
+        test_img_number = random.randint(0, len(X_test))
+        print('test_img_number index: ', test_img_number)
+        test_img = X_test[test_img_number]
+        ground_truth = y_test_argmax[test_img_number]
+        test_img_input = np.expand_dims(test_img, 0)
+        prediction = (model.predict(test_img_input))
+        predicted_img = np.argmax(prediction, axis=3)[0,:,:]
+        print('predicted_img: ', predicted_img)
+        plt.figure(figsize=(12,8))
+        plt.subplot(231)
+        plt.title('Test Image')
+        plt.imshow(test_img)
+        plt.subplot(232)
+        plt.title('Groudn Truth')
+        plt.imshow(ground_truth)
+        plt.subplot(233)
+        plt.title('Generated Image (L_generated)')
+        plt.imshow(predicted_img)
+        plt.show()
+
+        print('Done')
+except KeyboardInterrupt:
+    pass
+
+
+# gq_image = cv2.imread('/home/anirud/Desktop/SemanticSeg/gq-1024x1024.tif')
+# print(gq_image.shape)
+# predicted_gq = model.predict(gq_image)
+
+# segmented_output = np.argmax(predicted_gq, axis=3)[0,:,:]
+# print(segmented_output)
+# plt.imshow(segmented_output)
+# plt.show()
