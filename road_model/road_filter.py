@@ -52,3 +52,4 @@ sorted_files = sorted(files)
 for fname in sorted_files:
     img = os.path.join(path, fname)
     mask_road(img, dest_path='/home/anirud/Desktop/SemanticSeg/roads_only')
+    
